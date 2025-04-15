@@ -1,4 +1,4 @@
-from .comfy_nodes.pixeloe_pixelize import ComfyDeployPixelOE
+from .pixeloe_pixelize import ComfyDeployPixelOE
 
 NODE_CLASS_MAPPINGS = {
     "ComfyDeployPixelOE": ComfyDeployPixelOE,
