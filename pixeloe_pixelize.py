@@ -1,4 +1,4 @@
-,#pixeloe_pixelize.py
+#pixeloe_pixelize.py
 import torch
 import numpy as np
 from PIL import Image
@@ -53,7 +53,7 @@ class ComfyDeployPixelOE:
     FUNCTION = "pixelize_image"
     CATEGORY = "🔗ComfyDeploy/Image Processing"
 
-    def pixelize_image(self, image, downscale_mode, target_size, patch_size, thickness, color_matching, output_original_size):
+    def pixelize_image(self, image, downscale_mode, target_size, patch_size, thickness, color_matching, do_quant, output_original_size):
         
         try:
             # Import the PyTorch-specific pixelize function
@@ -74,13 +74,13 @@ class ComfyDeployPixelOE:
             
             try:
                 # Use the EXACT parameter names from the function definition you shared
-                pixelized_tensor = pixel_pytorch(
+                pixelized_tensor = pixelize_pytorch(
                     img_t=img_tensor_chw,
                     target_size=target_size,
                     patch_size=patch_size,
                     thickness=thickness,
                     mode=downscale_mode,
-                    do_color_match=color_matching
+                    do_color_match=color_matching,
                     do_quant=False,
                     K=32
                     )
