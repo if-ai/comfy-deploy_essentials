@@ -1,4 +1,4 @@
-#pixeloe_pixelize.py
+,#pixeloe_pixelize.py
 import torch
 import numpy as np
 from PIL import Image
