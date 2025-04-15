@@ -12,7 +12,7 @@ A collection of essential nodes for ComfyUI to enhance your workflow, focusing o
 1. Clone this repository into your ComfyUI `custom_nodes` directory:
    ```bash
    cd ComfyUI/custom_nodes
-   git clone https://github.com/if-ai/comfy-deploy_Essentials.git
+   git clone https://github.com/if-ai/comfy-deploy_essentials.git
    ```
 
 2. Install the required dependencies:
