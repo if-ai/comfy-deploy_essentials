@@ -8,9 +8,7 @@ import comfy.utils
 
 class ComfyDeployPixelOE:
     """
-    Applies pixelization effect using the pixeloe library (PyTorch version),
-    mimicking the functionality of the Essentials PixelOEPixelize node.
-    Designed for the ComfyDeploy custom node set.
+    Applies pixelization effect using the pixeloe library
     """
     @classmethod
     def INPUT_TYPES(s):
