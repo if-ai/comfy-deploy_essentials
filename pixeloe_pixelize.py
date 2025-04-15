@@ -8,7 +8,9 @@ import comfy.utils
 
 class ComfyDeployPixelOE:
     """
-    Applies pixelization effect using the pixeloe library
+    Applies pixelization effect using the pixeloe library (PyTorch version),
+    mimicking the functionality of the Essentials PixelOEPixelize node.
+    Designed for the ComfyDeploy custom node set.
     """
     @classmethod
     def INPUT_TYPES(s):
@@ -72,22 +74,20 @@ class ComfyDeployPixelOE:
             img_tensor_chw = img_tensor_single.permute(2, 0, 1)
             
             try:
-                # Call the PyTorch version with appropriate parameters
-                # Note: parameter names are different from the NumPy version
+                # Use the EXACT parameter names from the function definition you shared
                 pixelized_tensor = pixelize_fn(
-                    img_tensor_chw,
-                    mode=downscale_mode,
+                    img_t=img_tensor_chw,
                     target_size=target_size,
                     patch_size=patch_size,
                     thickness=thickness,
-                    do_color_match=color_matching,
-                    # The PyTorch version doesn't have a direct no_upscale parameter
-                    # We might need to handle upscaling differently
+                    mode=downscale_mode,
+                    do_color_match=color_matching
+                    # Other params are optional and use defaults
                 )
                 
-                # If no_upscale was True in the original, we need to manually handle keeping the target size
+                # Handle output size if needed
                 if not output_original_size:
-                    # Ensure we're at target_size (might need adjustment based on how pixelize_pytorch behaves)
+                    # Check current size vs target_size
                     current_h, current_w = pixelized_tensor.shape[1:3]
                     if current_h != target_size or current_w != target_size:
                         # Resize to target size using the same interpolation as would be used for downscaling
@@ -111,7 +111,7 @@ class ComfyDeployPixelOE:
                 processed_img_tensor = processed_img_tensor.unsqueeze(0).clamp(0, 1)
                 
             except Exception as e:
-                print(f"Error during pixeloe.torch.pixelize_pytorch execution: {e}")
+                print(f"Error during pixeloe.torch.pixelize execution: {e}")
                 raise e
 
             output_images.append(processed_img_tensor)
