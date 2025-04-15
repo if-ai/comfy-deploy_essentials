@@ -8,7 +8,9 @@ import comfy.utils
 
 class ComfyDeployPixelOE:
     """
-    Applies pixelization effect using the pixeloe library
+    Applies pixelization effect using the pixeloe library (PyTorch version),
+    mimicking the functionality of the Essentials PixelOEPixelize node.
+    Designed for the ComfyDeploy custom node set.
     """
     @classmethod
     def INPUT_TYPES(s):
@@ -56,7 +58,7 @@ class ComfyDeployPixelOE:
         
         try:
             # Import the PyTorch-specific pixelize function
-            from pixeloe.torch.pixelize import pixelize as pixelize_fn
+            from pixeloe.torch.pixelize import pixelize_pytorch as pixelize_fn
         except ImportError:
             raise ImportError("pixeloe library is required for the ComfyDeployPixelOE node, but it could not be imported. Please ensure it's installed in the ComfyDeploy environment.")
 
