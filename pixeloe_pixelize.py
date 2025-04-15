@@ -8,16 +8,13 @@ import comfy.utils
 
 class ComfyDeployPixelOE:
     """
-    Applies pixelization effect using the pixeloe library, mimicking the
-    functionality of the Essentials PixelOEPixelize node, including downscaling.
+    Applies pixelization effect using the pixeloe library (PyTorch version),
+    mimicking the functionality of the Essentials PixelOEPixelize node.
     Designed for the ComfyDeploy custom node set.
-    Uses internal import for pixeloe library.
     """
     @classmethod
     def INPUT_TYPES(s):
         # Define standard downscale modes supported by pixeloe
-        # We define these even if the import fails later, so the node *appears*
-        # correctly initially, but will error during execution if pixeloe is missing.
         downscale_modes = ["contrast", "bicubic", "nearest", "center", "k-centroid"]
 
         return {
@@ -58,41 +55,68 @@ class ComfyDeployPixelOE:
     CATEGORY = "🔗ComfyDeploy/Image Processing"
 
     def pixelize_image(self, image, downscale_mode, target_size, patch_size, thickness, color_matching, output_original_size):
-
-        # --- Import pixeloe HERE, inside the execution method ---
+        
         try:
-            from pixeloe.pixelize import pixelize
+            # Import the PyTorch-specific pixelize function
+            from pixeloe.torch import pixelize
+            pixelize_fn = pixelize.pixelize_pytorch
         except ImportError:
-            # This error will now happen at runtime if the library is missing
             raise ImportError("pixeloe library is required for the ComfyDeployPixelOE node, but it could not be imported. Please ensure it's installed in the ComfyDeploy environment.")
-        # --- End of internal import ---
 
         batch_size = image.shape[0]
         output_images = []
 
         pbar = comfy.utils.ProgressBar(batch_size)
         for i in range(batch_size):
-            img_tensor_single = image[i:i+1]
-            img_np_uint8 = img_tensor_single.clone().mul(255).clamp(0, 255).byte().cpu().numpy()[0]
-
+            # Get single image tensor from batch (keep in tensor format for PyTorch version)
+            img_tensor_single = image[i:i+1][0]  # shape: [H, W, C]
+            
+            # The PyTorch version expects [C, H, W] format
+            img_tensor_chw = img_tensor_single.permute(2, 0, 1)
+            
             try:
-                pixelized_np = pixelize(
-                    img_np_uint8,
+                # Call the PyTorch version with appropriate parameters
+                # Note: parameter names are different from the NumPy version
+                pixelized_tensor = pixelize_fn(
+                    img_tensor_chw,
                     mode=downscale_mode,
                     target_size=target_size,
                     patch_size=patch_size,
                     thickness=thickness,
-                    contrast=1.0,
-                    saturation=1.0,
-                    color_matching=color_matching,
-                    no_upscale=not output_original_size
+                    do_color_match=color_matching,
+                    # The PyTorch version doesn't have a direct no_upscale parameter
+                    # We might need to handle upscaling differently
                 )
+                
+                # If no_upscale was True in the original, we need to manually handle keeping the target size
+                if not output_original_size:
+                    # Ensure we're at target_size (might need adjustment based on how pixelize_pytorch behaves)
+                    current_h, current_w = pixelized_tensor.shape[1:3]
+                    if current_h != target_size or current_w != target_size:
+                        # Resize to target size using the same interpolation as would be used for downscaling
+                        mode = 'bilinear'  # Default mode
+                        if downscale_mode == 'nearest':
+                            mode = 'nearest'
+                        elif downscale_mode == 'bicubic':
+                            mode = 'bicubic'
+                            
+                        pixelized_tensor = torch.nn.functional.interpolate(
+                            pixelized_tensor.unsqueeze(0),
+                            size=(target_size, target_size),
+                            mode=mode,
+                            align_corners=False if mode != 'nearest' else None
+                        ).squeeze(0)
+                
+                # Convert back to [H, W, C] format for ComfyUI
+                processed_img_tensor = pixelized_tensor.permute(1, 2, 0)
+                
+                # Add batch dimension and clamp to valid range
+                processed_img_tensor = processed_img_tensor.unsqueeze(0).clamp(0, 1)
+                
             except Exception as e:
-                print(f"Error during pixeloe.pixelize execution: {e}")
-                raise e # Re-raise the error after printing
+                print(f"Error during pixeloe.torch.pixelize_pytorch execution: {e}")
+                raise e
 
-            processed_img_tensor = T.ToTensor()(pixelized_np)
-            processed_img_tensor = processed_img_tensor.unsqueeze(0).permute(0, 2, 3, 1)
             output_images.append(processed_img_tensor)
             pbar.update(1)
 
