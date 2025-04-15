@@ -41,6 +41,7 @@ class ComfyDeployPixelOE:
                     "tooltip": "Thickness of added outlines/edges."
                 }),
                 "color_matching": ("BOOLEAN", {"default": True}),
+                "do_quant": ("BOOLEAN", {"default": True}),
                 "output_original_size": ("BOOLEAN", {
                     "default": False,
                     "tooltip": "If True, upscale the pixelized image back to the original input size. If False, output at target_size."
@@ -56,7 +57,7 @@ class ComfyDeployPixelOE:
         
         try:
             # Import the PyTorch-specific pixelize function
-            from pixeloe.torch.pixelize import pixelize_pytorch as pixelize_fn
+            from pixeloe.torch.pixelize import pixelize_pytorch
         except ImportError:
             raise ImportError("pixeloe library is required for the ComfyDeployPixelOE node, but it could not be imported. Please ensure it's installed in the ComfyDeploy environment.")
 
@@ -73,15 +74,16 @@ class ComfyDeployPixelOE:
             
             try:
                 # Use the EXACT parameter names from the function definition you shared
-                pixelized_tensor = pixelize_fn(
+                pixelized_tensor = pixel_pytorch(
                     img_t=img_tensor_chw,
                     target_size=target_size,
                     patch_size=patch_size,
                     thickness=thickness,
                     mode=downscale_mode,
                     do_color_match=color_matching
-                    # Other params are optional and use defaults
-                )
+                    do_quant=False,
+                    K=32
+                    )
                 
                 # Handle output size if needed
                 if not output_original_size:
